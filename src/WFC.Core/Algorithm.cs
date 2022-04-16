@@ -8,9 +8,8 @@ public class Algorithm
 		_random = seed != null ? new Random(seed.Value) : new Random(); 
 	}
 	
-	public IOutput Run(Dimensions dimensions)
+	public void Run(Output output)
 	{
-		IOutput output = _configuration.CreateBlankOutput(dimensions);
 		while (!output.IsComplete())
 		{
 			var tile = output.GetTileWithLeastEntropy(_random);
@@ -18,20 +17,33 @@ public class Algorithm
 
 			Propagate(output, tile);
 		}
-
-		return output;
 	}
 
-	private void Propagate(IOutput output, ITile tile)
+	private void Propagate(Output output, Tile tile)
 	{
-		var tilesToProcess = new Queue<ITile>();
+		var tilesToProcess = new Queue<Tile>();
 		tilesToProcess.Enqueue(tile);
 		while (tilesToProcess.Any())
 		{
 			var currentTile = tilesToProcess.Dequeue();
 			foreach (var neighbor in output.GetUndecidedNeighbors(currentTile))
 			{
-				
+				if (neighbor.PossibleProtoTiles.Count == 0)
+				{
+					Console.WriteLine("Found a neighbor tile during propagation that has no possible prototiles remaining.");
+					continue;
+				}
+
+				var validNeighborProtoTiles = output.GetValidNeighborProtoTiles(currentTile, neighbor);
+				if (validNeighborProtoTiles.Count == 0)
+					throw new InvalidOperationException("Failed to find solution");
+
+				var eliminatedPossibleProtoTiles = neighbor.PossibleProtoTiles.Except(validNeighborProtoTiles).ToList();
+				if (eliminatedPossibleProtoTiles.Count != 0)
+				{
+					output.UpdatePossibleProtoTiles(neighbor, validNeighborProtoTiles);
+					tilesToProcess.Enqueue(neighbor);
+				}
 			}
 		}
 	}
