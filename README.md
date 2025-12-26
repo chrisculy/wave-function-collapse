@@ -165,13 +165,14 @@ Represents the output grid being generated.
 **Constructor:**
 
 ```csharp
-public Output(Configuration configuration, int width, int height, int depth = 1)
+public Output(Configuration configuration, int width, int height, int depth = 1, Func<int, int, int, IList<ProtoTile>> getInitialValidProtoTilesForPosition = null)
 ```
 
 - `configuration`: The configuration to use for this output
 - `width`: Width of the output grid
 - `height`: Height of the output grid
 - `depth`: Depth of the output grid (defaults to 1 for 2D grids)
+- `getInitialValidProtoTilesForPosition`: Optional function that takes x, y, z coordinates and returns a list of valid ProtoTiles for that position. If null, all ProtoTiles from the configuration are considered valid at each position. This allows for custom initialization constraints based on position
 
 **Properties:**
 
@@ -361,6 +362,42 @@ var configuration = new Configuration(protoTiles, AdjacencyAlgorithmKind.ADJACEN
 var output = new Output(configuration, 20, 20);
 
 // Using a specific seed ensures reproducible results
+var algorithm = new Algorithm(configuration, seed: 42);
+algorithm.Run(output);
+```
+
+### Custom Initial Constraints
+
+You can control which ProtoTiles are valid at specific positions using the `getInitialValidProtoTilesForPosition` parameter:
+
+```csharp
+var configuration = new Configuration(protoTiles, AdjacencyAlgorithmKind.ADJACENCY_2D);
+
+// Example: Force water tiles only in the center 5x5 area
+var output = new Output(
+    configuration,
+    width: 20,
+    height: 20,
+    getInitialValidProtoTilesForPosition: (x, y, z) =>
+    {
+        // Center area (7-13 on both axes)
+        if (x >= 7 && x <= 13 && y >= 7 && y <= 13)
+        {
+            // Only allow water ProtoTile (index 2)
+            return new List<ProtoTile> { protoTiles[2] };
+        }
+
+        // Edge rows/columns can only be grass
+        if (x == 0 || x == 19 || y == 0 || y == 19)
+        {
+            return new List<ProtoTile> { protoTiles[0] };
+        }
+
+        // Everywhere else, allow all tiles
+        return configuration.ProtoTiles;
+    }
+);
+
 var algorithm = new Algorithm(configuration, seed: 42);
 algorithm.Run(output);
 ```

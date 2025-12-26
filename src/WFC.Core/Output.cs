@@ -8,12 +8,13 @@ public class Output
 	public int Height { get; }
 	public int Depth { get; }
 
-	public Output(Configuration configuration, int width, int height, int depth = 1)
+	public Output(Configuration configuration, int width, int height, int depth = 1, Func<int, int, int, IList<ProtoTile>> getInitialValidProtoTilesForPosition = null)
 	{
 		Width = width;
 		Height = height;
 		Depth = depth;
 		_configuration = configuration;
+		_getInitialValidProtoTilesForPosition = getInitialValidProtoTilesForPosition;
 
 		_tiles = new Tile[Width * Height * Depth];
 		for (var z = 0; z < Depth; z++)
@@ -22,7 +23,7 @@ public class Output
 			{
 				for (var x = 0; x < Width; x++)
 				{
-					_tiles[Index(x,y,z)] = new Tile(x, y, z) { PossibleProtoTiles = configuration.ProtoTiles.ToList(), ProtoTile = null };
+					_tiles[Index(x,y,z)] = new Tile(x, y, z) { PossibleProtoTiles = _getInitialValidProtoTilesForPosition is not null ? _getInitialValidProtoTilesForPosition(x, y, z) : configuration.ProtoTiles, ProtoTile = null };
 				}
 			}
 		}
@@ -74,10 +75,10 @@ public class Output
 	{
 		if (_tilesWithReducedPossibleProtoTiles.Count == 0)
 			return GetRandomTile(random);
-		
+
 		return _tilesWithReducedPossibleProtoTiles.First();
 	}
-	
+
 	public void CollapseTile(Tile tile, ProtoTile protoTile)
 	{
 		tile.ProtoTile = protoTile;
@@ -92,7 +93,7 @@ public class Output
 		tile.PossibleProtoTiles = validNeighborProtoTiles;
 		if (!_tilesWithReducedPossibleProtoTiles.Contains(tile))
 			_tilesWithReducedPossibleProtoTiles.Add(tile);
-		
+
 		SortTilesWithReducedPossibleProtoTiles();
 	}
 
@@ -108,6 +109,7 @@ public class Output
 	private void SortTilesWithReducedPossibleProtoTiles() => _tilesWithReducedPossibleProtoTiles = _tilesWithReducedPossibleProtoTiles.OrderBy(x => x.PossibleProtoTiles.Count).ToList();
 
 	private Configuration _configuration;
+	private readonly Func<int, int, int, IList<ProtoTile>> _getInitialValidProtoTilesForPosition;
 	private Tile[] _tiles;
 	private List<Tile> _tilesWithReducedPossibleProtoTiles = new List<Tile>();
 
