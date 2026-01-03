@@ -36,7 +36,7 @@ public class Configuration
 				return protoTile;
 		}
 
-		return possibleProtoTiles.Last();
+		return possibleProtoTiles.LastOrDefault();
 	}
 
 	private Func<Output, int, int, int, IList<int>> _getAdjacentIndices;

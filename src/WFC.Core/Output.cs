@@ -23,7 +23,12 @@ public class Output
 			{
 				for (var x = 0; x < Width; x++)
 				{
-					_tiles[Index(x,y,z)] = new Tile(x, y, z) { PossibleProtoTiles = _getInitialValidProtoTilesForPosition is not null ? _getInitialValidProtoTilesForPosition(x, y, z) : configuration.ProtoTiles, ProtoTile = null };
+					var initialValidProtoTiles = _getInitialValidProtoTilesForPosition is not null ? _getInitialValidProtoTilesForPosition(x, y, z) : _configuration.ProtoTiles;
+					_tiles[Index(x,y,z)] = new Tile(x, y, z)
+					{
+						PossibleProtoTiles = initialValidProtoTiles.Count > 1 ? initialValidProtoTiles.ToList() : [],
+						ProtoTile = initialValidProtoTiles.Count == 1 ? initialValidProtoTiles[0] : null
+					};
 				}
 			}
 		}
